@@ -54,7 +54,7 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "Prompt Doctor AI — Score & Optimize Your AI Prompts" },
       {
         property: "og:description",
-        content: "Transform weak prompts into powerful AI instructions with an instant health score.",
+        content: "Diagnose any ChatGPT, Gemini, Claude or Copilot prompt instantly. Get a health score, an X-ray of what's missing, and a rewritten, optimized prompt.",
       },
     ],
   }),
