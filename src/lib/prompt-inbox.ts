@@ -1,6 +1,6 @@
 import type { TargetModel } from "./prompt-analysis";
 
-type Pending = { prompt: string; model?: TargetModel } | null;
+type Pending = { prompt: string; model?: TargetModel | undefined } | null;
 
 let pending: Pending = null;
 
