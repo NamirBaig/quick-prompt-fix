@@ -194,6 +194,208 @@ export function analyzePrompt(rawPrompt: string, model: TargetModel): AnalysisRe
   };
 }
 
+type Domain =
+  | "coding"
+  | "data"
+  | "writing"
+  | "marketing"
+  | "email"
+  | "research"
+  | "career"
+  | "education"
+  | "design"
+  | "business"
+  | "general";
+
+const DOMAIN_PATTERNS: [Domain, RegExp][] = [
+  ["coding", /\b(code|coding|function|bug|debug|refactor|api|typescript|javascript|python|java|rust|react|css|html|regex|algorithm|script|component|test|deploy|docker|git)\b/i],
+  ["data", /\b(sql|query|database|dataset|dataframe|analytics|spreadsheet|excel|csv|chart|metric|kpi|statistic|forecast|pandas|table schema)\b/i],
+  ["email", /\b(email|e-mail|reply|follow[- ]up|outreach|cold (mail|email)|subject line|inbox|message to)\b/i],
+  ["marketing", /\b(marketing|ad|ads|copy|campaign|landing page|seo|social (media|post)|tweet|linkedin post|brand|audience|conversion|newsletter|slogan)\b/i],
+  ["career", /\b(resume|cv|cover letter|interview|job (description|application)|hiring|recruiter|career|promotion|salary)\b/i],
+  ["research", /\b(research|summar|literature|paper|study|analy[sz]e|compare|evidence|source|report on|investigate|explain why|pros and cons)\b/i],
+  ["education", /\b(teach|explain|lesson|student|course|curriculum|quiz|tutorial|beginner|learn|syllabus|homework)\b/i],
+  ["design", /\b(image|photo|illustration|logo|render|midjourney|dall[- ]?e|art|poster|ui design|mockup|color palette|3d)\b/i],
+  ["business", /\b(business|strategy|revenue|pricing|startup|investor|pitch|roadmap|okr|stakeholder|proposal|budget|market entry)\b/i],
+  ["writing", /\b(blog|article|essay|story|script|newsletter|post about|write about|copywriting|caption|headline|book|novel)\b/i],
+];
+
+type DomainProfile = {
+  role: string;
+  contextHints: string;
+  audience: string;
+  constraints: string[];
+  format: string;
+  example: string;
+};
+
+const DOMAIN_PROFILES: Record<Domain, DomainProfile> = {
+  coding: {
+    role: "You are a senior software engineer and code reviewer who writes production-grade, well-tested code.",
+    contextHints: "language and version, framework, existing file/module structure, error messages or stack traces, and any constraints from the current codebase",
+    audience: "an experienced developer who wants working code plus a brief rationale, not a beginner tutorial",
+    constraints: [
+      "Show complete, runnable code — no pseudo-code or `...` placeholders.",
+      "Call out edge cases, failure modes, and performance trade-offs.",
+      "If a detail is missing, state the assumption you made instead of inventing an API.",
+    ],
+    format: "1. One-sentence approach summary\n2. The full code block, commented where non-obvious\n3. A short bullet list of assumptions and edge cases\n4. How to verify or test it",
+    example: "```ts\n// approach: single pass, O(n)\nexport function slugify(input: string) { /* ... */ }\n```\nAssumptions: input is UTF-8 and may be empty.",
+  },
+  data: {
+    role: "You are a senior data analyst fluent in SQL, statistics, and turning numbers into decisions.",
+    contextHints: "table/column names and types, data volume, the database engine or tool, the time range, and the decision this analysis supports",
+    audience: "a stakeholder who needs the insight first and the methodology second",
+    constraints: [
+      "Show the query or calculation, then the interpretation.",
+      "State any assumption about schema, joins, or missing data explicitly.",
+      "Never fabricate numbers; describe what the result would show instead.",
+    ],
+    format: "1. Headline finding in one sentence\n2. The query / calculation in a code block\n3. A table of the expected output columns\n4. Caveats and next analytical step",
+    example: "Finding: churn concentrates in month 2.\n```sql\nSELECT date_trunc('month', signup_at) AS cohort, count(*) ...\n```",
+  },
+  writing: {
+    role: "You are an experienced editor and writer with a distinctive, non-generic voice.",
+    contextHints: "the publication or platform, the reader, the desired tone, length, and any angle or thesis you already have in mind",
+    audience: "readers who skim first — the opening must earn the next paragraph",
+    constraints: [
+      "No AI clichés: avoid 'in today's fast-paced world', 'delve', 'unlock', 'game-changer'.",
+      "Prefer concrete examples and specific detail over abstract claims.",
+      "Vary sentence length; keep paragraphs under four lines.",
+    ],
+    format: "1. A working title plus two alternates\n2. The piece itself with subheadings\n3. A one-line summary usable as a meta description",
+    example: "Title: The Quiet Cost of Always-On Standups\nOpening: Most teams don't lose hours to meetings. They lose the twenty minutes before each one.",
+  },
+  marketing: {
+    role: "You are a direct-response marketer who writes copy judged on conversion, not applause.",
+    contextHints: "the product, the exact audience segment, the offer, the channel and placement, the primary objection, and the call to action",
+    audience: "a skeptical prospect scrolling fast who needs one clear reason to stop",
+    constraints: [
+      "Lead with the benefit, not the feature.",
+      "No superlatives you can't substantiate.",
+      "Keep each variant within its channel's practical length limit.",
+    ],
+    format: "1. Three headline options\n2. Primary body copy\n3. Two shorter variants for A/B testing\n4. The single CTA line",
+    example: "Headline: Ship the feature this week, not next quarter.\nCTA: Start free — no card needed.",
+  },
+  email: {
+    role: "You are a communications specialist who writes short, human emails that get replies.",
+    contextHints: "who the recipient is, your relationship to them, prior thread history, the outcome you want, and the deadline",
+    audience: "a busy recipient who reads the first two lines on a phone",
+    constraints: [
+      "Keep it under 150 words unless the situation demands more.",
+      "One clear ask, placed in the first or last line.",
+      "Plain, warm, non-corporate tone — no 'I hope this email finds you well'.",
+    ],
+    format: "1. Subject line (plus one alternate)\n2. The email body\n3. A one-line follow-up to send if there's no reply",
+    example: "Subject: Quick question on the March invoice\nBody: Hi Sam — one thing before Friday: ...",
+  },
+  research: {
+    role: "You are a rigorous research analyst who separates established fact from inference.",
+    contextHints: "the scope and time window, which sources or domains count as credible, the depth required, and the decision this feeds",
+    audience: "an informed reader who will challenge weak reasoning",
+    constraints: [
+      "Distinguish clearly between what is well established, contested, and unknown.",
+      "Give the reasoning behind each key claim.",
+      "Flag where you are uncertain instead of smoothing over gaps.",
+    ],
+    format: "1. Executive summary (3 bullets)\n2. Findings grouped by theme\n3. Counter-arguments or contradicting evidence\n4. Confidence level and open questions",
+    example: "Summary: Evidence is strong on X, mixed on Y.\nContested: the effect size in longitudinal studies varies 2–5x.",
+  },
+  career: {
+    role: "You are a hiring manager and career coach who has screened thousands of candidates.",
+    contextHints: "the target role and seniority, the job description, your relevant experience with metrics, and the company's stated priorities",
+    audience: "a recruiter spending under 30 seconds on the first pass",
+    constraints: [
+      "Every claim must be backed by a measurable outcome.",
+      "Cut generic traits like 'hard-working' and 'team player'.",
+      "Mirror the vocabulary of the target job description.",
+    ],
+    format: "1. The rewritten content\n2. A bullet list of what changed and why\n3. Three likely follow-up questions this will trigger",
+    example: "Before: Responsible for improving performance.\nAfter: Cut p95 API latency 840ms → 210ms across 12 services.",
+  },
+  education: {
+    role: "You are a patient teacher who explains hard ideas with concrete analogies and no jargon creep.",
+    contextHints: "the learner's current level, what they already know, the time available, and how the learning will be assessed",
+    audience: "a motivated learner encountering this topic for the first time",
+    constraints: [
+      "Introduce one new concept at a time, building on the previous.",
+      "Define every technical term the first time it appears.",
+      "Include a check-for-understanding question after each section.",
+    ],
+    format: "1. Plain-language overview\n2. Step-by-step explanation with an analogy\n3. A worked example\n4. Three practice questions with answers",
+    example: "Analogy: A database index is the book's index — you skip to page 212 instead of reading all 400 pages.",
+  },
+  design: {
+    role: "You are an art director who writes precise visual briefs and generation prompts.",
+    contextHints: "the subject, mood, medium or art style, lighting, colour palette, composition, aspect ratio, and anything to exclude",
+    audience: "an image model or illustrator that needs unambiguous visual direction",
+    constraints: [
+      "Be explicit about composition, lighting, and colour — never leave them implied.",
+      "State a negative list of what must not appear.",
+      "Specify aspect ratio and rendering style.",
+    ],
+    format: "1. The main generation prompt (one dense paragraph)\n2. A negative prompt line\n3. Two stylistic variations",
+    example: "Prompt: overhead shot of a walnut desk, warm morning side light, muted earth palette, 35mm, shallow depth of field, 3:2.",
+  },
+  business: {
+    role: "You are a strategy consultant who gives decisive recommendations with the reasoning attached.",
+    contextHints: "the company stage and size, the market, the numbers you already have, constraints on budget or timeline, and who decides",
+    audience: "a decision-maker who wants a recommendation, not a menu of options",
+    constraints: [
+      "Commit to a recommendation and defend it.",
+      "Quantify impact and risk wherever possible.",
+      "Name the assumptions the recommendation depends on.",
+    ],
+    format: "1. Recommendation in one sentence\n2. The reasoning in 3–5 bullets\n3. Risks and mitigations\n4. First three concrete actions with owners and timing",
+    example: "Recommendation: hold pricing, unbundle onboarding as a paid tier.\nRisk: churn in the SMB segment; mitigate with a 6-month grandfather.",
+  },
+  general: {
+    role: "You are an expert practitioner in the subject of this request, with deep hands-on experience.",
+    contextHints: "your situation, what you've already tried, any constraints, and what a successful answer would let you do next",
+    audience: "a knowledgeable but time-poor reader who wants actionable substance, not filler",
+    constraints: [
+      "Be specific and concrete; avoid generic filler.",
+      "Do not invent facts — if something is unknown, say so.",
+      "Keep the response focused and skimmable.",
+    ],
+    format: "1. A one-paragraph summary\n2. Clear section headings\n3. Bullet points for lists\n4. A short 'Next steps' section",
+    example: "Summary: <one crisp sentence>\nKey point: <specific, evidence-backed statement>",
+  },
+};
+
+function detectDomain(prompt: string): Domain {
+  let best: Domain = "general";
+  let bestHits = 0;
+  for (const [domain, re] of DOMAIN_PATTERNS) {
+    const hits = (prompt.match(new RegExp(re.source, "gi")) ?? []).length;
+    if (hits > bestHits) {
+      bestHits = hits;
+      best = domain;
+    }
+  }
+  return best;
+}
+
+const STOP_WORDS = new Set([
+  "write","create","make","give","help","need","want","please","about","that","this","with","from","your","have","will","should","would","could","into","them","they","some","more","most","very","just","like","also","when","what","which","there","their","using","use","can","for","the","and","are","you","our","its","how",
+]);
+
+function extractTopic(prompt: string): string {
+  const words = prompt
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 3 && !STOP_WORDS.has(w));
+  const freq = new Map<string, number>();
+  for (const w of words) freq.set(w, (freq.get(w) ?? 0) + 1);
+  const top = [...freq.entries()]
+    .sort((a, b) => b[1] - a[1] || words.indexOf(a[0]) - words.indexOf(b[0]))
+    .slice(0, 3)
+    .map(([w]) => w);
+  return top.join(", ");
+}
+
 function optimizePrompt(
   prompt: string,
   model: TargetModel,
@@ -203,23 +405,26 @@ function optimizePrompt(
   const improvements: Improvement[] = [];
   const sections: string[] = [];
 
+  const domain = detectDomain(prompt);
+  const profile = DOMAIN_PROFILES[domain];
+  const topic = extractTopic(prompt);
+  const topicLabel = topic || "the subject of this request";
+
   if (!xray.role) {
-    sections.push(
-      "## Role\nYou are a senior domain expert with 10+ years of hands-on experience in the subject of this request.",
-    );
+    sections.push(`## Role\n${profile.role}`);
     improvements.push({
-      title: "Added an expert role",
-      detail: "Giving the model a specific persona raises the depth and confidence of its answer.",
+      title: `Added a ${domain === "general" ? "domain expert" : domain} role`,
+      detail: `The prompt reads as a ${domain} task, so the model is cast as ${profile.role.replace(/^You are /, "").replace(/\.$/, "")}.`,
     });
   }
 
   if (!xray.context) {
     sections.push(
-      "## Context\nDescribe the relevant background here: what already exists, what has been tried, and any tools, data, or systems involved.",
+      `## Context\nFill in the background on ${topicLabel}: ${profile.contextHints}.`,
     );
     improvements.push({
-      title: "Added a context section",
-      detail: "A dedicated slot for background stops the model from inventing assumptions.",
+      title: "Added a tailored context section",
+      detail: `Prompts about ${topicLabel} depend on ${profile.contextHints.split(",")[0]?.trim()}, so there's now an explicit slot for it.`,
     });
   }
 
@@ -231,41 +436,33 @@ function optimizePrompt(
     });
   }
 
-  sections.push(
-    "## Audience\nWrite for a knowledgeable but time-poor reader who wants actionable substance, not filler.",
-  );
+  sections.push(`## Audience\nWrite for ${profile.audience}.`);
   improvements.push({
     title: "Defined the target audience",
-    detail: "Naming the reader lets the model calibrate tone, vocabulary, and depth.",
+    detail: `Set to ${profile.audience} — typical for ${domain} work — so tone and depth are calibrated.`,
   });
 
   if (!xray.constraints) {
-    sections.push(
-      "## Constraints\n- Be specific and concrete; avoid generic filler.\n- Do not invent facts. If something is unknown, say so.\n- Keep the response focused and skimmable.",
-    );
+    sections.push(`## Constraints\n${profile.constraints.map((c) => `- ${c}`).join("\n")}`);
     improvements.push({
-      title: "Added explicit constraints",
-      detail: "Boundaries on accuracy, tone, and length prevent rambling or fabricated detail.",
+      title: "Added domain-specific constraints",
+      detail: `Guardrails common to ${domain} tasks, e.g. "${profile.constraints[0]}"`,
     });
   }
 
   if (!xray.format) {
-    sections.push(
-      "## Output Format\nRespond in Markdown with:\n1. A one-paragraph summary\n2. Clear section headings\n3. Bullet points for lists\n4. A short 'Next steps' section at the end",
-    );
+    sections.push(`## Output Format\n${profile.format}`);
     improvements.push({
-      title: "Specified an output format",
-      detail: "A defined structure makes the response predictable and easy to reuse.",
+      title: "Specified a fit-for-purpose output format",
+      detail: `A ${domain}-shaped structure makes the response predictable and directly reusable.`,
     });
   }
 
   if (!xray.examples) {
-    sections.push(
-      "## Example\nExample of the style expected:\n> Summary: <one crisp sentence>\n> Key point: <specific, evidence-backed statement>",
-    );
+    sections.push(`## Example\nExample of the style expected:\n${profile.example}`);
     improvements.push({
       title: "Added a worked example",
-      detail: "One short example anchors the model to the exact style and level of detail you want.",
+      detail: "A short, domain-matched example anchors the model to the exact style and level of detail.",
     });
   }
 
@@ -275,7 +472,7 @@ function optimizePrompt(
     );
     improvements.push({
       title: "Flagged ambiguous wording",
-      detail: "Vague words were called out so the model asks for or assumes measurable specifics.",
+      detail: `Vague words (${vagueHits.slice(0, 4).join(", ")}) were called out so the model asks for or assumes measurable specifics.`,
     });
   }
 
@@ -287,6 +484,7 @@ function optimizePrompt(
 
   return { optimized: sections.join("\n\n"), improvements };
 }
+
 
 export function scoreTone(score: number): "critical" | "warn" | "ok" | "great" {
   if (score < 50) return "critical";
