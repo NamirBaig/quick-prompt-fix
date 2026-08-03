@@ -55,10 +55,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      delete_prompt_analysis: {
-        Args: { _id: string; _session_id: string }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
