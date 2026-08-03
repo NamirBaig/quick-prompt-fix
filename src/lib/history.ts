@@ -1,5 +1,5 @@
-import { supabase } from "@/integrations/supabase/client";
 import type { AnalysisResult, TargetModel } from "./prompt-analysis";
+import { createAnalysis, listAnalyses, removeAnalysis } from "./history.functions";
 
 const KEY = "prompt-doctor-session";
 
@@ -31,36 +31,27 @@ export async function saveAnalysis(
   model: TargetModel,
   result: AnalysisResult,
 ): Promise<void> {
-  const { error } = await supabase.from("prompt_analyses").insert({
-    session_id: getSessionId(),
-    prompt,
-    optimized_prompt: result.optimized,
-    score: result.score,
-    complexity: result.complexity,
-    model,
-    weaknesses: result.weaknesses.map((w) => w.title),
+  await createAnalysis({
+    data: {
+      sessionId: getSessionId(),
+      prompt,
+      optimized_prompt: result.optimized,
+      score: result.score,
+      complexity: result.complexity,
+      model,
+      weaknesses: result.weaknesses.map((w) => w.title),
+    },
   });
-  if (error) throw error;
 }
 
 export async function fetchHistory(): Promise<AnalysisRecord[]> {
-  const { data, error } = await supabase
-    .from("prompt_analyses")
-    .select("id, prompt, optimized_prompt, score, complexity, model, weaknesses, created_at")
-    .eq("session_id", getSessionId())
-    .order("created_at", { ascending: false })
-    .limit(200);
-  if (error) throw error;
-  return (data ?? []).map((row) => ({
+  const rows = await listAnalyses({ data: { sessionId: getSessionId() } });
+  return (rows ?? []).map((row) => ({
     ...row,
     weaknesses: Array.isArray(row.weaknesses) ? (row.weaknesses as string[]) : [],
   }));
 }
 
 export async function deleteAnalysis(id: string): Promise<void> {
-  const { error } = await supabase.rpc("delete_prompt_analysis", {
-    _id: id,
-    _session_id: getSessionId(),
-  });
-  if (error) throw error;
+  await removeAnalysis({ data: { sessionId: getSessionId(), id } });
 }
