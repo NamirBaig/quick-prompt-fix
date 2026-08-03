@@ -14,7 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      prompt_analyses: {
+        Row: {
+          complexity: string
+          created_at: string
+          id: string
+          model: string
+          optimized_prompt: string
+          prompt: string
+          score: number
+          session_id: string
+          weaknesses: Json
+        }
+        Insert: {
+          complexity: string
+          created_at?: string
+          id?: string
+          model: string
+          optimized_prompt: string
+          prompt: string
+          score: number
+          session_id: string
+          weaknesses?: Json
+        }
+        Update: {
+          complexity?: string
+          created_at?: string
+          id?: string
+          model?: string
+          optimized_prompt?: string
+          prompt?: string
+          score?: number
+          session_id?: string
+          weaknesses?: Json
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
