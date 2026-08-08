@@ -41,6 +41,7 @@ import {
 import { saveAnalysis } from "@/lib/history";
 import { downloadReport } from "@/lib/pdf-report";
 import { takePendingPrompt } from "@/lib/prompt-inbox";
+import { useI18n, type Dict } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -61,6 +62,15 @@ export const Route = createFileRoute("/")({
   component: Analyzer,
 });
 
+const XRAY_I18N: Record<XRayKey, keyof Dict> = {
+  role: "xrayRole",
+  context: "xrayContext",
+  goal: "xrayGoal",
+  format: "xrayFormat",
+  constraints: "xrayConstraints",
+  examples: "xrayExamples",
+};
+
 const QUALITY_TONE: Record<string, string> = {
   Poor: "text-score-critical",
   Fair: "text-score-warn",
@@ -76,6 +86,7 @@ function Analyzer() {
   const [running, setRunning] = useState(false);
   const [copied, setCopied] = useState(false);
   const queryClient = useQueryClient();
+  const { t, languageName } = useI18n();
 
   useEffect(() => {
     const pending = takePendingPrompt();
@@ -98,13 +109,13 @@ function Analyzer() {
 
   const runAnalysis = () => {
     if (prompt.trim().length < 3) {
-      toast.error("Write a prompt first — even a rough one.");
+      toast.error(t("errWritePrompt"));
       return;
     }
     setRunning(true);
     const current = prompt.trim();
     window.setTimeout(() => {
-      const analysis = analyzePrompt(current, model);
+      const analysis = analyzePrompt(current, model, languageName);
       setResult(analysis);
       setAnalyzedPrompt(current);
       setRunning(false);
@@ -116,7 +127,7 @@ function Analyzer() {
     if (!result) return;
     await navigator.clipboard.writeText(result.optimized);
     setCopied(true);
-    toast.success("Optimized prompt copied");
+    toast.success(t("copied"));
     window.setTimeout(() => setCopied(false), 1800);
   };
 
@@ -125,18 +136,18 @@ function Analyzer() {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <PageHero
-        title="Transform weak prompts into powerful AI instructions."
-        subtitle="Paste a prompt, pick your model, and get an instant diagnosis: health score, structural X-ray, detected weaknesses, and a fully rewritten version."
+        title={t("tagline")}
+        subtitle={t("heroSubtitle")}
       />
 
       <Card className="shadow-card">
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
             <Stethoscope className="size-4 text-primary" />
-            Your prompt
+            {t("yourPrompt")}
           </CardTitle>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Target model</span>
+            <span className="text-xs text-muted-foreground">{t("targetModel")}</span>
             <Select value={model} onValueChange={(v) => setModel(v as TargetModel)}>
               <SelectTrigger className="w-40">
                 <SelectValue />
@@ -155,21 +166,21 @@ function Analyzer() {
           <Textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="e.g. Write a blog post about remote work productivity"
+            placeholder={t("promptPlaceholder")}
             className="min-h-44 resize-y text-sm leading-relaxed"
           />
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-muted-foreground">
-              {wordCount} words · analysis runs locally, no API key needed
+              {wordCount} {t("wordsLocal")}
             </p>
             <Button onClick={runAnalysis} disabled={running} size="lg" className="w-full sm:w-auto">
               {running ? (
                 <>
-                  <Loader2 className="size-4 animate-spin" /> Diagnosing…
+                  <Loader2 className="size-4 animate-spin" /> {t("analyzing")}
                 </>
               ) : (
                 <>
-                  <Sparkles className="size-4" /> Analyze Prompt
+                  <Sparkles className="size-4" /> {t("analyze")}
                 </>
               )}
             </Button>
@@ -183,12 +194,12 @@ function Analyzer() {
             <Card className={`shadow-card ${SCORE_RING[tone]} border-2`}>
               <CardContent className="flex flex-col items-center gap-3 py-8">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Prompt Health Score
+                  {t("healthScore")}
                 </p>
                 <p className={`font-display text-7xl font-bold leading-none ${SCORE_CLASS[tone]}`}>
                   {result.score}
                 </p>
-                <p className="text-xs text-muted-foreground">out of 100</p>
+                <p className="text-xs text-muted-foreground">{t("outOf100")}</p>
                 <Badge variant="secondary" className="mt-1">
                   {result.complexity}
                 </Badge>
@@ -197,7 +208,7 @@ function Analyzer() {
 
             <Card className="shadow-card">
               <CardHeader>
-                <CardTitle className="text-base">Prompt X-Ray</CardTitle>
+                <CardTitle className="text-base">{t("xray")}</CardTitle>
               </CardHeader>
               <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {(Object.keys(XRAY_LABELS) as XRayKey[]).map((key) => {
@@ -221,8 +232,12 @@ function Analyzer() {
                         {ok ? <Check className="size-4" /> : <X className="size-4" />}
                       </span>
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">{XRAY_LABELS[key]}</p>
-                        <p className="text-xs text-muted-foreground">{ok ? "Present" : "Missing"}</p>
+                        <p className="truncate text-sm font-medium">
+                          {t(XRAY_I18N[key])}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {ok ? t("present") : t("missing")}
+                        </p>
                       </div>
                     </div>
                   );
@@ -235,13 +250,13 @@ function Analyzer() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <TriangleAlert className="size-4 text-destructive" />
-                Detected weaknesses ({result.weaknesses.length})
+                {t("weaknesses")} ({result.weaknesses.length})
               </CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3 md:grid-cols-2">
               {result.weaknesses.length === 0 && (
                 <p className="text-sm text-muted-foreground">
-                  No structural weaknesses found — this prompt is in great shape.
+                  {t("noWeaknesses")}
                 </p>
               )}
               {result.weaknesses.map((w) => (
@@ -258,13 +273,13 @@ function Analyzer() {
 
           <Card className="shadow-card">
             <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <CardTitle className="text-base">Original vs. Optimized</CardTitle>
+              <CardTitle className="text-base">{t("comparison")}</CardTitle>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge className="bg-score-great/15 text-score-great hover:bg-score-great/15">
-                  +{result.improvementPercent}% improvement
+                  +{result.improvementPercent}% {t("improvement")}
                 </Badge>
                 <Badge variant="outline" className={QUALITY_TONE[result.quality]}>
-                  Projected quality: {result.quality}
+                  {t("projectedQuality")}: {result.quality}
                 </Badge>
               </div>
             </CardHeader>
@@ -272,7 +287,7 @@ function Analyzer() {
               <div className="grid gap-4 lg:grid-cols-[1fr_auto_1fr] lg:items-stretch">
                 <div className="rounded-xl border border-border bg-muted/40 p-4">
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Original
+                    {t("original")}
                   </p>
                   <pre className="max-h-80 overflow-auto whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground">
                     {analyzedPrompt}
@@ -285,7 +300,7 @@ function Analyzer() {
                 </div>
                 <div className="rounded-xl border-2 border-primary/25 bg-primary/5 p-4">
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">
-                    Optimized
+                    {t("optimized")}
                   </p>
                   <pre className="max-h-80 overflow-auto whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground">
                     {result.optimized}
@@ -295,14 +310,14 @@ function Analyzer() {
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Button onClick={copyOptimized} className="sm:w-auto">
                   {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-                  Copy Optimized Prompt
+                  {t("copyOptimized")}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => downloadReport(analyzedPrompt, model, result)}
                 >
                   <FileDown className="size-4" />
-                  Download PDF Report
+                  {t("downloadPdf")}
                 </Button>
               </div>
             </CardContent>
@@ -312,7 +327,7 @@ function Analyzer() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Download className="size-4 rotate-180 text-score-great" />
-                Improvements applied ({result.improvements.length})
+                {t("improvementsApplied")} ({result.improvements.length})
               </CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3 md:grid-cols-2">

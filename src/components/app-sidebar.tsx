@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Stethoscope, LayoutDashboard, History, LibraryBig, Activity } from "lucide-react";
 
+import { useI18n, type Dict } from "@/lib/i18n";
 import {
   Sidebar,
   SidebarContent,
@@ -14,13 +15,14 @@ import {
 } from "@/components/ui/sidebar";
 
 const items = [
-  { title: "Analyzer", url: "/", icon: Activity },
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "History", url: "/history", icon: History },
-  { title: "Templates", url: "/templates", icon: LibraryBig },
-] as const;
+  { key: "navAnalyzer", url: "/", icon: Activity },
+  { key: "navDashboard", url: "/dashboard", icon: LayoutDashboard },
+  { key: "navHistory", url: "/history", icon: History },
+  { key: "navTemplates", url: "/templates", icon: LibraryBig },
+] as const satisfies readonly { key: keyof Dict; url: string; icon: typeof Activity }[];
 
 export function AppSidebar() {
+  const { t } = useI18n();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
 
   return (
@@ -31,23 +33,23 @@ export function AppSidebar() {
             <Stethoscope className="size-5" />
           </span>
           <div className="min-w-0 group-data-[collapsible=icon]:hidden">
-            <p className="truncate font-display text-sm font-semibold">Prompt Doctor AI</p>
-            <p className="truncate text-xs text-muted-foreground">Prompt diagnostics</p>
+            <p className="truncate font-display text-sm font-semibold">{t("appName")}</p>
+            <p className="truncate text-xs text-muted-foreground">{t("subtitleSidebar")}</p>
           </div>
         </div>
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("workspace")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild isActive={pathname === item.url} tooltip={item.title}>
+                  <SidebarMenuButton asChild isActive={pathname === item.url} tooltip={t(item.key)}>
                     <Link to={item.url}>
                       <item.icon className="size-4" />
-                      <span>{item.title}</span>
+                      <span>{t(item.key)}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
