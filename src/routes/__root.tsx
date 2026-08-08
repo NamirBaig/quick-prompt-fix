@@ -127,31 +127,47 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function AppShell() {
+  const { t } = useI18n();
+  return (
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full bg-background">
+        <AppSidebar />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border bg-background/80 px-3 backdrop-blur">
+            <SidebarTrigger />
+            <span className="font-display text-sm font-semibold">{t("appName")}</span>
+            <span className="hidden truncate text-xs text-muted-foreground lg:inline">
+              {t("tagline")}
+            </span>
+            <div className="ms-auto flex items-center gap-1.5">
+              <LanguageSelect />
+              <ThemeToggle />
+            </div>
+          </header>
+          <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
+            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+            <Outlet />
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SidebarProvider>
-        <div className="flex min-h-screen w-full bg-background">
-          <AppSidebar />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border bg-background/80 px-3 backdrop-blur">
-              <SidebarTrigger />
-              <span className="font-display text-sm font-semibold">Prompt Doctor AI</span>
-              <span className="hidden text-xs text-muted-foreground sm:inline">
-                Transform weak prompts into powerful AI instructions.
-              </span>
-            </header>
-            <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
-              {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-              <Outlet />
-            </main>
-          </div>
-        </div>
-      </SidebarProvider>
-      <Toaster />
+      <ThemeProvider>
+        <I18nProvider>
+          <AppShell />
+          <Toaster />
+        </I18nProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
+
 
