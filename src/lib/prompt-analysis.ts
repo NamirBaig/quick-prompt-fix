@@ -81,7 +81,11 @@ function has(text: string, key: XRayKey): boolean {
   return PATTERNS[key].some((re) => re.test(text));
 }
 
-export function analyzePrompt(rawPrompt: string, model: TargetModel): AnalysisResult {
+export function analyzePrompt(
+  rawPrompt: string,
+  model: TargetModel,
+  answerLanguage = "English",
+): AnalysisResult {
   const prompt = rawPrompt.trim();
   const words = prompt.split(/\s+/).filter(Boolean);
   const wordCount = words.length;
@@ -174,7 +178,7 @@ export function analyzePrompt(rawPrompt: string, model: TargetModel): AnalysisRe
         ? "Intermediate"
         : "Beginner";
 
-  const { optimized, improvements } = optimizePrompt(prompt, model, xray, vagueHits);
+  const { optimized, improvements } = optimizePrompt(prompt, model, xray, vagueHits, answerLanguage);
 
   const improvementPercent = Math.max(5, Math.round(((100 - score) / Math.max(score, 20)) * 55));
   const projected = Math.min(99, score + Math.round((100 - score) * 0.8));
@@ -396,95 +400,151 @@ function extractTopic(prompt: string): string {
   return top.join(", ");
 }
 
-function optimizePrompt(
+function cleanTask(prompt: string): string {
+  let task = prompt.trim().replace(/\s+/g, " ");
+  task = task.replace(
+    /^(hey|hi|hello|please|can you|could you|i want you to|i need you to|i want|i need)\s+/i,
+    "",
+  );
+  task = task.charAt(0).toUpperCase() + task.slice(1);
+  if (!/[.?!]$/.test(task)) task += ".";
+  return task;
+}
+
+function titleCase(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+export function optimizePrompt(
   prompt: string,
   model: TargetModel,
   xray: Record<XRayKey, boolean>,
   vagueHits: string[],
+  answerLanguage = "English",
 ): { optimized: string; improvements: Improvement[] } {
   const improvements: Improvement[] = [];
-  const sections: string[] = [];
 
   const domain = detectDomain(prompt);
   const profile = DOMAIN_PROFILES[domain];
   const topic = extractTopic(prompt);
   const topicLabel = topic || "the subject of this request";
+  const task = cleanTask(prompt || "Complete the task described below.");
 
+  const lines: string[] = [];
+
+  // 1. Role — always a real sentence, never a placeholder.
+  lines.push(profile.role);
   if (!xray.role) {
-    sections.push(`## Role\n${profile.role}`);
     improvements.push({
-      title: `Added a ${domain === "general" ? "domain expert" : domain} role`,
-      detail: `The prompt reads as a ${domain} task, so the model is cast as ${profile.role.replace(/^You are /, "").replace(/\.$/, "")}.`,
+      title: `Assigned a ${domain === "general" ? "domain expert" : domain} role`,
+      detail: `The prompt reads as a ${domain} task, so it now opens by casting the model as ${profile.role
+        .replace(/^You are /, "")
+        .replace(/\.$/, "")}.`,
     });
   }
 
-  if (!xray.context) {
-    sections.push(
-      `## Context\nFill in the background on ${topicLabel}: ${profile.contextHints}.`,
-    );
-    improvements.push({
-      title: "Added a tailored context section",
-      detail: `Prompts about ${topicLabel} depend on ${profile.contextHints.split(",")[0]?.trim()}, so there's now an explicit slot for it.`,
-    });
-  }
-
-  sections.push(`## Task\n${prompt || "State the task clearly here."}`);
+  // 2. Task
+  lines.push("");
+  lines.push("TASK");
+  lines.push(task);
   if (!xray.goal) {
     improvements.push({
-      title: "Reframed the request as an explicit task",
-      detail: "The instruction is now stated as a single, clear objective under its own heading.",
+      title: "Stated the objective explicitly",
+      detail: "The request is now a single, unambiguous instruction under its own heading.",
     });
   }
 
-  sections.push(`## Audience\nWrite for ${profile.audience}.`);
+  // 3. Context — written as assertions the model can act on.
+  lines.push("");
+  lines.push("CONTEXT");
+  lines.push(
+    `The subject is ${topicLabel}. Treat this as a real ${domain === "general" ? "professional" : domain} task with real stakes. Before answering, take into account ${profile.contextHints}. If any of these are not stated, choose the most reasonable common-case assumption, state it in one line at the top, and continue — do not stop to ask.`,
+  );
+  if (!xray.context) {
+    improvements.push({
+      title: "Supplied working context",
+      detail: `Added the background a ${domain} task depends on, plus an instruction to assume sensible defaults instead of stalling.`,
+    });
+  }
+
+  // 4. Audience
+  lines.push("");
+  lines.push("AUDIENCE");
+  lines.push(`Write for ${profile.audience}.`);
   improvements.push({
-    title: "Defined the target audience",
-    detail: `Set to ${profile.audience} — typical for ${domain} work — so tone and depth are calibrated.`,
+    title: "Defined the audience",
+    detail: `Set to ${profile.audience}, so tone and depth are calibrated instead of generic.`,
   });
 
-  if (!xray.constraints) {
-    sections.push(`## Constraints\n${profile.constraints.map((c) => `- ${c}`).join("\n")}`);
-    improvements.push({
-      title: "Added domain-specific constraints",
-      detail: `Guardrails common to ${domain} tasks, e.g. "${profile.constraints[0]}"`,
-    });
-  }
-
-  if (!xray.format) {
-    sections.push(`## Output Format\n${profile.format}`);
-    improvements.push({
-      title: "Specified a fit-for-purpose output format",
-      detail: `A ${domain}-shaped structure makes the response predictable and directly reusable.`,
-    });
-  }
-
-  if (!xray.examples) {
-    sections.push(`## Example\nExample of the style expected:\n${profile.example}`);
-    improvements.push({
-      title: "Added a worked example",
-      detail: "A short, domain-matched example anchors the model to the exact style and level of detail.",
-    });
-  }
-
+  // 5. Constraints
+  lines.push("");
+  lines.push("REQUIREMENTS");
+  const constraints = [...profile.constraints];
   if (vagueHits.length > 0) {
-    sections.push(
-      `## Precision Notes\nReplace vague terms with measurable criteria. Ambiguous words found in the original: ${vagueHits.slice(0, 6).join(", ")}.`,
+    constraints.push(
+      `Be measurable and specific — replace vague qualifiers (${vagueHits.slice(0, 4).join(", ")}) with concrete numbers, names, or criteria.`,
     );
+  }
+  constraints.push("Do not repeat these instructions back to me; produce only the deliverable.");
+  lines.push(constraints.map((c) => `- ${c}`).join("\n"));
+  if (!xray.constraints) {
     improvements.push({
-      title: "Flagged ambiguous wording",
-      detail: `Vague words (${vagueHits.slice(0, 4).join(", ")}) were called out so the model asks for or assumes measurable specifics.`,
+      title: "Added guardrails",
+      detail: `Constraints typical of ${domain} work, e.g. "${profile.constraints[0]}"`,
+    });
+  }
+  if (vagueHits.length > 0) {
+    improvements.push({
+      title: "Removed ambiguity",
+      detail: `Vague words (${vagueHits.slice(0, 4).join(", ")}) are now countered with a "be measurable" requirement.`,
     });
   }
 
-  sections.push(`## Model Guidance (${model})\n${MODEL_NOTES[model]}`);
+  // 6. Output format
+  lines.push("");
+  lines.push("OUTPUT FORMAT");
+  lines.push(profile.format);
+  if (!xray.format) {
+    improvements.push({
+      title: "Locked the output structure",
+      detail: `A ${domain}-shaped format makes the reply predictable and directly reusable.`,
+    });
+  }
+
+  // 7. Example
+  lines.push("");
+  lines.push("EXAMPLE OF THE STYLE EXPECTED");
+  lines.push(profile.example);
+  if (!xray.examples) {
+    improvements.push({
+      title: "Anchored with an example",
+      detail: "A short, domain-matched sample locks in the expected style and level of detail.",
+    });
+  }
+
+  // 8. Language
+  lines.push("");
+  lines.push("LANGUAGE");
+  lines.push(`Write the entire response in ${answerLanguage}. Keep technical terms, code, and proper nouns in their original form.`);
+  improvements.push({
+    title: `Set the answer language to ${answerLanguage}`,
+    detail: `The prompt now tells the model to reply in ${answerLanguage} while leaving code and proper nouns untouched.`,
+  });
+
+  // 9. Model-specific guidance
+  lines.push("");
+  lines.push("HOW TO WORK");
+  lines.push(MODEL_NOTES[model]);
   improvements.push({
     title: `Tuned for ${model}`,
-    detail: `Appended guidance that matches ${model}'s documented strengths and prompting best practices.`,
+    detail: `Added working instructions matched to ${model}'s documented strengths.`,
   });
 
-  return { optimized: sections.join("\n\n"), improvements };
-}
+  const header = `${titleCase(domain)} request — ready to paste`;
+  void header;
 
+  return { optimized: lines.join("\n"), improvements };
+}
 
 export function scoreTone(score: number): "critical" | "warn" | "ok" | "great" {
   if (score < 50) return "critical";
