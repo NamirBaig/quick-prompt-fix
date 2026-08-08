@@ -411,10 +411,6 @@ function cleanTask(prompt: string): string {
   return task;
 }
 
-function titleCase(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
 export function optimizePrompt(
   prompt: string,
   model: TargetModel,
@@ -539,9 +535,6 @@ export function optimizePrompt(
     title: `Tuned for ${model}`,
     detail: `Added working instructions matched to ${model}'s documented strengths.`,
   });
-
-  const header = `${titleCase(domain)} request — ready to paste`;
-  void header;
 
   return { optimized: lines.join("\n"), improvements };
 }
