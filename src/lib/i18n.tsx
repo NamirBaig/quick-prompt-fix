@@ -70,7 +70,23 @@ const en = {
   xrayFormat: "Output Format",
   xrayConstraints: "Constraints",
   xrayExamples: "Examples",
+  answerTitle: "Get the answer here",
+  answerSubtitle:
+    "Run the optimized prompt through the built-in AI assistant — no need to leave the app.",
+  getAnswer: "Get the answer",
+  regenerate: "Ask again",
+  answering: "Thinking…",
+  stop: "Stop",
+  copyAnswer: "Copy answer",
+  answerCopied: "Answer copied",
+  offlineBadge: "Offline mode",
+  offlineNote:
+    "No internet connection — this answer was generated on your device. Reconnect for a full AI answer.",
+  cachedBadge: "Saved answer",
+  useOriginalPrompt: "Use original prompt",
+  useOptimizedPrompt: "Use optimized prompt",
 };
+
 
 export type Dict = typeof en;
 type Partials = Partial<Dict>;
