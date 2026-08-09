@@ -15,7 +15,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { AnswerPanel } from "@/components/answer-panel";
 import { PageHero } from "@/components/page-hero";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -320,8 +322,15 @@ function Analyzer() {
                   {t("downloadPdf")}
                 </Button>
               </div>
-            </CardContent>
+          </CardContent>
           </Card>
+
+          <AnswerPanel
+            optimizedPrompt={result.optimized}
+            originalPrompt={analyzedPrompt}
+            model={model}
+          />
+
 
           <Card className="shadow-card">
             <CardHeader>
