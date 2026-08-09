@@ -322,8 +322,15 @@ function Analyzer() {
                   {t("downloadPdf")}
                 </Button>
               </div>
-            </CardContent>
+          </CardContent>
           </Card>
+
+          <AnswerPanel
+            optimizedPrompt={result.optimized}
+            originalPrompt={analyzedPrompt}
+            model={model}
+          />
+
 
           <Card className="shadow-card">
             <CardHeader>
