@@ -57,7 +57,7 @@ function TemplatesPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((t) => (
-          <Card key={t.title} className="flex flex-col shadow-soft transition-shadow hover:shadow-card">
+          <Card key={t.title} className="rise hover-lift flex flex-col shadow-soft">
             <CardContent className="flex flex-1 flex-col gap-3 py-5">
               <span className="w-fit rounded-full bg-accent px-2.5 py-1 text-[11px] font-medium text-accent-foreground">
                 {t.category}

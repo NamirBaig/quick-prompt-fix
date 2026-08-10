@@ -1,5 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { Bot, Check, Copy, Loader2, Sparkles, WifiOff } from "lucide-react";
+import {
+  Bot,
+  Check,
+  Copy,
+  FileText,
+  Image as ImageIcon,
+  Loader2,
+  Paperclip,
+  Sparkles,
+  WifiOff,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +21,31 @@ import { buildOfflineAnswer, cacheAnswer, getCachedAnswer } from "@/lib/offline-
 import type { TargetModel } from "@/lib/prompt-analysis";
 
 type Source = "ai" | "offline" | "cache" | null;
+
+type Attachment = { name: string; mimeType: string; dataUrl: string; size: number };
+
+const MAX_FILES = 3;
+const MAX_BYTES = 8 * 1024 * 1024;
+const ALLOWED = [
+  "application/pdf",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+  "text/plain",
+  "text/markdown",
+  "text/csv",
+];
+
+function readAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("read failed"));
+    reader.readAsDataURL(file);
+  });
+}
+
 
 function renderInline(text: string, keyPrefix: string) {
   return text.split(/(\*\*[^*]+\*\*|`[^`]+`|_[^_]+_)/g).map((chunk, i) => {
@@ -100,6 +136,8 @@ export function AnswerPanel({
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [useOriginal, setUseOriginal] = useState(false);
+  const [files, setFiles] = useState<Attachment[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   // Reset whenever a new analysis arrives.
@@ -112,6 +150,37 @@ export function AnswerPanel({
   useEffect(() => () => abortRef.current?.abort(), []);
 
   const promptToSend = useOriginal ? originalPrompt : optimizedPrompt;
+
+  const onPickFiles = async (list: FileList | null) => {
+    if (!list?.length) return;
+    const picked: Attachment[] = [];
+    for (const file of Array.from(list)) {
+      if (files.length + picked.length >= MAX_FILES) {
+        toast.error(t("attachTooMany"));
+        break;
+      }
+      if (!ALLOWED.includes(file.type)) {
+        toast.error(`${file.name}: ${t("attachUnsupported")}`);
+        continue;
+      }
+      if (file.size > MAX_BYTES) {
+        toast.error(`${file.name}: ${t("attachTooLarge")}`);
+        continue;
+      }
+      try {
+        picked.push({
+          name: file.name,
+          mimeType: file.type,
+          dataUrl: await readAsDataUrl(file),
+          size: file.size,
+        });
+      } catch {
+        toast.error(file.name);
+      }
+    }
+    if (picked.length) setFiles((prev) => [...prev, ...picked].slice(0, MAX_FILES));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const fallback = (reason?: string) => {
     const cached = getCachedAnswer(promptToSend, languageName);
@@ -131,6 +200,7 @@ export function AnswerPanel({
     setSource(null);
 
     if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      if (files.length) toast.message(t("attachOfflineNote"));
       fallback();
       setLoading(false);
       return;
@@ -143,9 +213,15 @@ export function AnswerPanel({
       const res = await fetch("/api/answer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: promptToSend, model, language: languageName }),
+        body: JSON.stringify({
+          prompt: promptToSend,
+          model,
+          language: languageName,
+          attachments: files.map(({ name, mimeType, dataUrl }) => ({ name, mimeType, dataUrl })),
+        }),
         signal: controller.signal,
       });
+
 
       if (!res.ok || !res.body) {
         const message = await res.text().catch(() => "");
@@ -184,7 +260,7 @@ export function AnswerPanel({
   };
 
   return (
-    <Card className="shadow-card">
+    <Card className="rise shadow-card hover-lift">
       <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -202,12 +278,30 @@ export function AnswerPanel({
           >
             {useOriginal ? t("useOptimizedPrompt") : t("useOriginalPrompt")}
           </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.txt,.md,.csv"
+            className="hidden"
+            onChange={(e) => void onPickFiles(e.target.files)}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            className="press"
+            disabled={loading || files.length >= MAX_FILES}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Paperclip className="size-4" />
+            {t("attachFiles")}
+          </Button>
           {loading ? (
-            <Button variant="outline" onClick={() => abortRef.current?.abort()}>
+            <Button variant="outline" className="press" onClick={() => abortRef.current?.abort()}>
               {t("stop")}
             </Button>
           ) : (
-            <Button onClick={run}>
+            <Button className="press" onClick={run}>
               <Sparkles className="size-4" />
               {answer ? t("regenerate") : t("getAnswer")}
             </Button>
@@ -215,7 +309,40 @@ export function AnswerPanel({
         </div>
       </CardHeader>
 
+      <CardContent className={files.length ? "space-y-2 pb-4" : "pb-4"}>
+        {files.length === 0 ? (
+          <p className="text-xs text-muted-foreground">{t("attachHint")}</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {files.map((f) => (
+              <span
+                key={`${f.name}-${f.size}`}
+                className="rise flex items-center gap-2 rounded-full border border-border bg-muted/40 py-1 pe-1 ps-3 text-xs"
+              >
+                {f.mimeType.startsWith("image/") ? (
+                  <ImageIcon className="size-3.5 text-primary" />
+                ) : (
+                  <FileText className="size-3.5 text-primary" />
+                )}
+                <span className="max-w-40 truncate">{f.name}</span>
+                <span className="text-muted-foreground">{Math.round(f.size / 1024)} KB</span>
+                <button
+                  type="button"
+                  aria-label={t("removeFile")}
+                  disabled={loading}
+                  onClick={() => setFiles((prev) => prev.filter((p) => p !== f))}
+                  className="flex size-5 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </CardContent>
+
       {(loading || answer) && (
+
         <CardContent className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             {source === "offline" && (

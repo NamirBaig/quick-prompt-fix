@@ -85,7 +85,15 @@ const en = {
   cachedBadge: "Saved answer",
   useOriginalPrompt: "Use original prompt",
   useOptimizedPrompt: "Use optimized prompt",
+  attachFiles: "Attach files",
+  attachHint: "Attach a resume, PDF, image or text file (max 3 files, 8 MB each)",
+  attachTooMany: "You can attach up to 3 files.",
+  attachTooLarge: "That file is larger than 8 MB.",
+  attachUnsupported: "Unsupported file type. Use PDF, image, TXT, MD or CSV.",
+  attachOfflineNote: "Attached files need an internet connection to be read.",
+  removeFile: "Remove file",
 };
+
 
 
 export type Dict = typeof en;
