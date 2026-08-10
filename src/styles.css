@@ -189,15 +189,95 @@
   color: transparent;
 }
 
+/* --- Fluid, Apple-like surface + motion layer --- */
+
+@utility glass {
+  background-color: color-mix(in oklab, var(--card) 68%, transparent);
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+}
+
+@utility glass-bar {
+  background-color: color-mix(in oklab, var(--background) 72%, transparent);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+
+@utility hover-lift {
+  transition:
+    transform 0.45s var(--ease-spring),
+    box-shadow 0.45s var(--ease-spring),
+    border-color 0.3s ease;
+  will-change: transform;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-elevated);
+  }
+}
+
+@utility press {
+  transition: transform 0.28s var(--ease-spring);
+
+  &:active {
+    transform: scale(0.975);
+  }
+}
+
+@utility rise {
+  animation: pd-rise 0.6s var(--ease-out-soft) both;
+}
+
+@utility rise-delay-1 {
+  animation-delay: 0.06s;
+}
+
+@utility rise-delay-2 {
+  animation-delay: 0.12s;
+}
+
+@utility rise-delay-3 {
+  animation-delay: 0.18s;
+}
+
+@keyframes pd-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @layer base {
+  :root {
+    --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+    --shadow-elevated: 0 2px 6px oklch(0.4 0.08 275 / 0.08), 0 28px 60px -28px oklch(0.4 0.1 275 / 0.4);
+  }
+
+  .dark {
+    --shadow-elevated: 0 2px 6px oklch(0 0 0 / 0.4), 0 28px 60px -28px oklch(0 0 0 / 0.7);
+  }
+
   * {
     border-color: var(--color-border);
+  }
+
+  html {
+    scroll-behavior: smooth;
   }
 
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   h1,
@@ -205,7 +285,53 @@
   h3,
   .font-display {
     font-family: var(--font-display);
-    letter-spacing: -0.015em;
+    letter-spacing: -0.022em;
+  }
+
+  h1 {
+    letter-spacing: -0.03em;
+  }
+
+  button,
+  a,
+  [role="button"] {
+    transition:
+      background-color 0.25s var(--ease-spring),
+      color 0.25s var(--ease-spring),
+      border-color 0.25s var(--ease-spring),
+      opacity 0.25s var(--ease-spring),
+      transform 0.25s var(--ease-spring),
+      box-shadow 0.25s var(--ease-spring);
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--primary) 26%, transparent);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: color-mix(in oklab, var(--muted-foreground) 32%, transparent);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
+
 
