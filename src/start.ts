@@ -18,6 +18,28 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
   }
 });
 
+// Baseline hardening for every response: blocks clickjacking, MIME sniffing,
+// referrer leakage, and unrequested device access.
+const securityHeadersMiddleware = createMiddleware().server(async ({ next }) => {
+  const result = (await next()) as unknown;
+  if (result instanceof Response) {
+    const headers = new Headers(result.headers);
+    headers.set("X-Content-Type-Options", "nosniff");
+    headers.set("X-Frame-Options", "SAMEORIGIN");
+    headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+    headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+    headers.set("Cross-Origin-Opener-Policy", "same-origin");
+    headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    return new Response(result.body, {
+      status: result.status,
+      statusText: result.statusText,
+      headers,
+    });
+  }
+  return result as Awaited<ReturnType<typeof next>>;
+});
+
+
 // Start installs this automatically when src/start.ts is absent; defining the
 // file opts out, so re-add it explicitly to keep server functions protected
 // from cross-site requests.
