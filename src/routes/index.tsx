@@ -48,16 +48,16 @@ import { useI18n, type Dict } from "@/lib/i18n";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Prompt Doctor AI — Score & Optimize Your AI Prompts" },
+      { title: "Prompt Doctor AI — Fix & Optimize AI Prompts" },
       {
         name: "description",
         content:
-          "Diagnose any ChatGPT, Gemini, Claude or Copilot prompt instantly. Get a health score, an X-ray of what's missing, and a rewritten, optimized prompt.",
+          "Paste any ChatGPT, Gemini, Claude or Copilot prompt to get a health score, see what's missing, and copy a stronger, paste-ready rewrite in seconds.",
       },
-      { property: "og:title", content: "Prompt Doctor AI — Score & Optimize Your AI Prompts" },
+      { property: "og:title", content: "Prompt Doctor AI — Fix & Optimize AI Prompts" },
       {
         property: "og:description",
-        content: "Diagnose any ChatGPT, Gemini, Claude or Copilot prompt instantly. Get a health score, an X-ray of what's missing, and a rewritten, optimized prompt.",
+        content: "Paste any ChatGPT, Gemini, Claude or Copilot prompt to get a health score, see what's missing, and copy a stronger, paste-ready rewrite in seconds.",
       },
     ],
   }),
