@@ -1,5 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { Bot, Check, Copy, Loader2, Sparkles, WifiOff } from "lucide-react";
+import {
+  Bot,
+  Check,
+  Copy,
+  FileText,
+  Image as ImageIcon,
+  Loader2,
+  Paperclip,
+  Sparkles,
+  WifiOff,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +21,31 @@ import { buildOfflineAnswer, cacheAnswer, getCachedAnswer } from "@/lib/offline-
 import type { TargetModel } from "@/lib/prompt-analysis";
 
 type Source = "ai" | "offline" | "cache" | null;
+
+type Attachment = { name: string; mimeType: string; dataUrl: string; size: number };
+
+const MAX_FILES = 3;
+const MAX_BYTES = 8 * 1024 * 1024;
+const ALLOWED = [
+  "application/pdf",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+  "text/plain",
+  "text/markdown",
+  "text/csv",
+];
+
+function readAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("read failed"));
+    reader.readAsDataURL(file);
+  });
+}
+
 
 function renderInline(text: string, keyPrefix: string) {
   return text.split(/(\*\*[^*]+\*\*|`[^`]+`|_[^_]+_)/g).map((chunk, i) => {
