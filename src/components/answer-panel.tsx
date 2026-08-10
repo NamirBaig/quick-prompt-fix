@@ -136,6 +136,8 @@ export function AnswerPanel({
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [useOriginal, setUseOriginal] = useState(false);
+  const [files, setFiles] = useState<Attachment[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   // Reset whenever a new analysis arrives.
@@ -148,6 +150,37 @@ export function AnswerPanel({
   useEffect(() => () => abortRef.current?.abort(), []);
 
   const promptToSend = useOriginal ? originalPrompt : optimizedPrompt;
+
+  const onPickFiles = async (list: FileList | null) => {
+    if (!list?.length) return;
+    const picked: Attachment[] = [];
+    for (const file of Array.from(list)) {
+      if (files.length + picked.length >= MAX_FILES) {
+        toast.error(t("attachTooMany"));
+        break;
+      }
+      if (!ALLOWED.includes(file.type)) {
+        toast.error(`${file.name}: ${t("attachUnsupported")}`);
+        continue;
+      }
+      if (file.size > MAX_BYTES) {
+        toast.error(`${file.name}: ${t("attachTooLarge")}`);
+        continue;
+      }
+      try {
+        picked.push({
+          name: file.name,
+          mimeType: file.type,
+          dataUrl: await readAsDataUrl(file),
+          size: file.size,
+        });
+      } catch {
+        toast.error(file.name);
+      }
+    }
+    if (picked.length) setFiles((prev) => [...prev, ...picked].slice(0, MAX_FILES));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const fallback = (reason?: string) => {
     const cached = getCachedAnswer(promptToSend, languageName);
@@ -167,6 +200,7 @@ export function AnswerPanel({
     setSource(null);
 
     if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      if (files.length) toast.message(t("attachOfflineNote"));
       fallback();
       setLoading(false);
       return;
@@ -179,9 +213,15 @@ export function AnswerPanel({
       const res = await fetch("/api/answer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: promptToSend, model, language: languageName }),
+        body: JSON.stringify({
+          prompt: promptToSend,
+          model,
+          language: languageName,
+          attachments: files.map(({ name, mimeType, dataUrl }) => ({ name, mimeType, dataUrl })),
+        }),
         signal: controller.signal,
       });
+
 
       if (!res.ok || !res.body) {
         const message = await res.text().catch(() => "");
