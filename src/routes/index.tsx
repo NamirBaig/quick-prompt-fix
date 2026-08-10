@@ -142,7 +142,7 @@ function Analyzer() {
         subtitle={t("heroSubtitle")}
       />
 
-      <Card className="shadow-card">
+      <Card className="rise shadow-card hover-lift">
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
             <Stethoscope className="size-4 text-primary" />
@@ -193,7 +193,7 @@ function Analyzer() {
       {result && (
         <>
           <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
-            <Card className={`shadow-card ${SCORE_RING[tone]} border-2`}>
+            <Card className={`rise hover-lift shadow-card ${SCORE_RING[tone]} border-2`}>
               <CardContent className="flex flex-col items-center gap-3 py-8">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   {t("healthScore")}
@@ -208,7 +208,7 @@ function Analyzer() {
               </CardContent>
             </Card>
 
-            <Card className="shadow-card">
+            <Card className="rise shadow-card hover-lift">
               <CardHeader>
                 <CardTitle className="text-base">{t("xray")}</CardTitle>
               </CardHeader>
@@ -248,7 +248,7 @@ function Analyzer() {
             </Card>
           </div>
 
-          <Card className="shadow-card">
+          <Card className="rise shadow-card hover-lift">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <TriangleAlert className="size-4 text-destructive" />
@@ -273,7 +273,7 @@ function Analyzer() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-card">
+          <Card className="rise shadow-card hover-lift">
             <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle className="text-base">{t("comparison")}</CardTitle>
               <div className="flex flex-wrap items-center gap-2">
@@ -332,7 +332,7 @@ function Analyzer() {
           />
 
 
-          <Card className="shadow-card">
+          <Card className="rise shadow-card hover-lift">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Download className="size-4 rotate-180 text-score-great" />

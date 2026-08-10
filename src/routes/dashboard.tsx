@@ -95,7 +95,7 @@ function Dashboard() {
         />
       </div>
 
-      <Card className="shadow-card">
+      <Card className="rise shadow-card hover-lift">
         <CardHeader>
           <CardTitle className="text-base">Score trend</CardTitle>
         </CardHeader>
@@ -131,7 +131,7 @@ function Dashboard() {
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="shadow-card">
+        <Card className="rise shadow-card hover-lift">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <ListChecks className="size-4 text-primary" />
@@ -170,7 +170,7 @@ function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-card">
+        <Card className="rise shadow-card hover-lift">
           <CardHeader>
             <CardTitle className="text-base">Best scoring prompt</CardTitle>
           </CardHeader>
