@@ -134,8 +134,8 @@ function AppShell() {
       <div className="flex min-h-screen w-full bg-background">
         <AppSidebar />
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border bg-background/80 px-3 backdrop-blur">
-            <SidebarTrigger />
+          <header className="glass-bar sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border/60 px-3">
+            <SidebarTrigger className="press" />
             <span className="font-display text-sm font-semibold">{t("appName")}</span>
             <span className="hidden truncate text-xs text-muted-foreground lg:inline">
               {t("tagline")}
@@ -149,6 +149,7 @@ function AppShell() {
             {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
             <Outlet />
           </main>
+
         </div>
       </div>
     </SidebarProvider>
