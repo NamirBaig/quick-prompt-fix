@@ -64,20 +64,55 @@ function firstSentence(prompt: string) {
   return s.length > 180 ? `${s.slice(0, 177)}…` : s;
 }
 
+const OFFLINE_STYLE: Record<string, { note: string; outline: string[] }> = {
+  ChatGPT: {
+    note: "structured, step-by-step and friendly, the way ChatGPT would lay it out",
+    outline: [
+      "- **Opening** — one line framing the result.",
+      "- **Steps** — numbered actions, each with a concrete example.",
+      "- **In short** — a two-line takeaway.",
+    ],
+  },
+  Claude: {
+    note: "written as considered prose with tradeoffs called out, the way Claude would answer",
+    outline: [
+      "- **The core consideration** — the one tradeoff that drives the answer.",
+      "- **The reasoning** — flowing paragraphs, not bullet soup.",
+      "- **The honest bottom line** — a clear recommendation plus its caveat.",
+    ],
+  },
+  Gemini: {
+    note: "scannable and comprehensive with sections and tables, the way Gemini would answer",
+    outline: [
+      "- **Direct answer** — one or two sentences up front.",
+      "- **Sections** — headed blocks, with a comparison table where things are comparable.",
+      "- **Things to keep in mind** — caveats and next steps.",
+    ],
+  },
+  Copilot: {
+    note: "terse and implementation-first, the way Copilot would answer",
+    outline: [
+      "- **The artifact** — the code, command or config, in a fenced block.",
+      "- **Notes** — assumptions, gotchas, how to run it. Nothing else.",
+    ],
+  },
+};
+
 /**
- * Builds a structured working answer entirely on-device. It is a planning /
- * outline answer rather than generated prose, so it stays useful with no
- * internet connection.
+ * Builds a structured working answer entirely on-device, shaped to match the
+ * house style of the selected target model. It is a planning / outline answer
+ * rather than generated prose, so it stays useful with no internet connection.
  */
 export function buildOfflineAnswer(prompt: string, model: string): string {
   const topic = firstSentence(prompt);
   const kws = keywords(prompt);
   const focus = kws.length ? kws.slice(0, 5).join(", ") : "the request above";
+  const style = OFFLINE_STYLE[model] ?? OFFLINE_STYLE.ChatGPT;
 
   return [
-    "## Offline answer",
+    `## Offline answer — ${model} style`,
     "",
-    `You are currently offline, so this answer was produced on your device instead of by ${model}. It gives you a complete working structure you can act on now, and you can re-run it online later for a full written answer.`,
+    `You are currently offline, so this answer was produced on your device instead of by ${model}. It is ${style.note}, and you can re-run it online later for a full written answer.`,
     "",
     "### What is being asked",
     topic,
@@ -92,11 +127,8 @@ export function buildOfflineAnswer(prompt: string, model: string): string {
     "4. Check it against every requirement in the prompt.",
     "5. Tighten wording, formatting and length before sharing.",
     "",
-    "### Suggested answer outline",
-    "- **Opening** — a one-line summary of the result.",
-    `- **Body** — the main work, organised around ${focus}.`,
-    "- **Details** — examples, numbers, or code where relevant.",
-    "- **Close** — next steps, caveats, or a call to action.",
+    `### Suggested answer outline (${model} style)`,
+    ...style.outline,
     "",
     "### Things to double-check",
     "- Is the audience and tone right?",
