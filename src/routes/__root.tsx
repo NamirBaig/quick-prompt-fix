@@ -85,16 +85,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "author", content: "Prompt Doctor AI" },
+      { property: "og:site_name", content: "Prompt Doctor AI" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { title: "Prompt Doctor AI — Fix & Optimize AI Prompts" },
-      { property: "og:title", content: "Prompt Doctor AI — Fix & Optimize AI Prompts" },
-      { name: "twitter:title", content: "Prompt Doctor AI — Fix & Optimize AI Prompts" },
-      { name: "description", content: "Paste any ChatGPT, Gemini, Claude or Copilot prompt to get a health score, see what's missing, and copy a stronger, paste-ready rewrite in seconds." },
-      { property: "og:description", content: "Paste any ChatGPT, Gemini, Claude or Copilot prompt to get a health score, see what's missing, and copy a stronger, paste-ready rewrite in seconds." },
-      { name: "twitter:description", content: "Paste any ChatGPT, Gemini, Claude or Copilot prompt to get a health score, see what's missing, and copy a stronger, paste-ready rewrite in seconds." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a2f51013-93dd-486f-ba6a-697531a1673f/id-preview-902b6689--41e84d20-ce5f-4358-88b6-14831b10e6f1.lovable.app-1785740182021.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a2f51013-93dd-486f-ba6a-697531a1673f/id-preview-902b6689--41e84d20-ce5f-4358-88b6-14831b10e6f1.lovable.app-1785740182021.png" },
+
     ],
     links: [
       { rel: "stylesheet", href: appCss },

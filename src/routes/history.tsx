@@ -26,7 +26,14 @@ export const Route = createFileRoute("/history")({
         property: "og:description",
         content: "Every analyzed prompt, with score, model and the optimized rewrite.",
       },
+      { property: "og:url", content: "https://quick-prompt-fix.lovable.app/history" },
+      { name: "twitter:title", content: "History — Prompt Doctor AI" },
+      {
+        name: "twitter:description",
+        content: "Every analyzed prompt, with score, model and the optimized rewrite.",
+      },
     ],
+    links: [{ rel: "canonical", href: "https://quick-prompt-fix.lovable.app/history" }],
   }),
   component: HistoryPage,
 });

@@ -33,7 +33,14 @@ export const Route = createFileRoute("/dashboard")({
         property: "og:description",
         content: "Average score, score trend and most common weaknesses across your analyzed prompts.",
       },
+      { property: "og:url", content: "https://quick-prompt-fix.lovable.app/dashboard" },
+      { name: "twitter:title", content: "Dashboard — Prompt Doctor AI" },
+      {
+        name: "twitter:description",
+        content: "Average score, score trend and most common weaknesses across your analyzed prompts.",
+      },
     ],
+    links: [{ rel: "canonical", href: "https://quick-prompt-fix.lovable.app/dashboard" }],
   }),
   component: Dashboard,
 });

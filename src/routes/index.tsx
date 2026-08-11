@@ -59,7 +59,14 @@ export const Route = createFileRoute("/")({
         property: "og:description",
         content: "Paste any ChatGPT, Gemini, Claude or Copilot prompt to get a health score, see what's missing, and copy a stronger, paste-ready rewrite in seconds.",
       },
+      { property: "og:url", content: "https://quick-prompt-fix.lovable.app/" },
+      { name: "twitter:title", content: "Prompt Doctor AI — Fix & Optimize AI Prompts" },
+      {
+        name: "twitter:description",
+        content: "Paste any ChatGPT, Gemini, Claude or Copilot prompt to get a health score, see what's missing, and copy a stronger, paste-ready rewrite in seconds.",
+      },
     ],
+    links: [{ rel: "canonical", href: "https://quick-prompt-fix.lovable.app/" }],
   }),
   component: Analyzer,
 });
@@ -151,7 +158,7 @@ function Analyzer() {
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">{t("targetModel")}</span>
             <Select value={model} onValueChange={(v) => setModel(v as TargetModel)}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-40" aria-label={t("targetModel")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

@@ -22,7 +22,14 @@ export const Route = createFileRoute("/templates")({
         property: "og:description",
         content: "Browse starter prompts by category and optimize them in one click.",
       },
+      { property: "og:url", content: "https://quick-prompt-fix.lovable.app/templates" },
+      { name: "twitter:title", content: "Prompt Templates — Prompt Doctor AI" },
+      {
+        name: "twitter:description",
+        content: "Browse starter prompts by category and optimize them in one click.",
+      },
     ],
+    links: [{ rel: "canonical", href: "https://quick-prompt-fix.lovable.app/templates" }],
   }),
   component: TemplatesPage,
 });
