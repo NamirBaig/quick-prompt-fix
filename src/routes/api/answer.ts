@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 
+import { answerStyleInstructions } from "@/lib/answer-styles";
+
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024; // 8 MB per file
@@ -135,8 +137,10 @@ export const Route = createFileRoute("/api/answer")({
         }
 
         const systemPrompt =
-          `You are Prompt Doctor's built-in assistant. Answer the user's prompt fully and directly, ` +
-          `as ${model} would. Use clear Markdown-style structure with short headings and bullet points. ` +
+          `You are Prompt Doctor's built-in assistant. Answer the user's prompt fully and directly.\n\n` +
+          `${answerStyleInstructions(model)}\n\n` +
+          `Match that voice, formatting and level of detail closely — the user picked ${model} on purpose. ` +
+          `Do not claim to be ${model} or mention which model you are; simply answer in that style. ` +
           `Write the answer in ${language}, keeping technical terms and code in English.` +
           (attachments.length
             ? ` The user attached ${attachments.length} file(s) (e.g. a resume or document). Read them carefully, ` +
