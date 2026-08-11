@@ -12,3 +12,5 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Sitemap: https://quick-prompt-fix.lovable.app/sitemap.xml
