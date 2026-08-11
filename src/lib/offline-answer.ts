@@ -107,7 +107,7 @@ export function buildOfflineAnswer(prompt: string, model: string): string {
   const topic = firstSentence(prompt);
   const kws = keywords(prompt);
   const focus = kws.length ? kws.slice(0, 5).join(", ") : "the request above";
-  const style = OFFLINE_STYLE[model] ?? OFFLINE_STYLE.ChatGPT;
+  const style = OFFLINE_STYLE[model] ?? OFFLINE_STYLE["ChatGPT"]!;
 
   return [
     `## Offline answer — ${model} style`,
