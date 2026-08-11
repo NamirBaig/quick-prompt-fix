@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as HistoryRouteImport } from './routes/history'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TemplatesRouteImport } from './routes/templates'
 import { Route as ApiAnswerRouteImport } from './routes/api/answer'
 
@@ -30,6 +31,11 @@ const HistoryRoute = HistoryRouteImport.update({
   path: '/history',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TemplatesRoute = TemplatesRouteImport.update({
   id: '/templates',
   path: '/templates',
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/history': typeof HistoryRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/templates': typeof TemplatesRoute
   '/api/answer': typeof ApiAnswerRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/history': typeof HistoryRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/templates': typeof TemplatesRoute
   '/api/answer': typeof ApiAnswerRoute
 }
@@ -60,22 +68,42 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/history': typeof HistoryRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/templates': typeof TemplatesRoute
   '/api/answer': typeof ApiAnswerRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/history' | '/templates' | '/api/answer'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/history'
+    | '/sitemap.xml'
+    | '/templates'
+    | '/api/answer'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/history' | '/templates' | '/api/answer'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/history'
+    | '/sitemap.xml'
+    | '/templates'
+    | '/api/answer'
   id:
-    '__root__' | '/' | '/dashboard' | '/history' | '/templates' | '/api/answer'
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/history'
+    | '/sitemap.xml'
+    | '/templates'
+    | '/api/answer'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   HistoryRoute: typeof HistoryRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TemplatesRoute: typeof TemplatesRoute
   ApiAnswerRoute: typeof ApiAnswerRoute
 }
@@ -103,6 +131,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/templates': {
       id: '/templates'
       path: '/templates'
@@ -124,6 +159,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   HistoryRoute: HistoryRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   TemplatesRoute: TemplatesRoute,
   ApiAnswerRoute: ApiAnswerRoute,
 }
