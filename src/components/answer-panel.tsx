@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useI18n } from "@/lib/i18n";
+import { ANSWER_STYLES } from "@/lib/answer-styles";
 import { buildOfflineAnswer, cacheAnswer, getCachedAnswer } from "@/lib/offline-answer";
 import type { TargetModel } from "@/lib/prompt-analysis";
 
@@ -263,11 +264,14 @@ export function AnswerPanel({
     <Card className="rise shadow-card hover-lift">
       <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <CardTitle className="flex items-center gap-2 text-base">
+          <CardTitle className="flex flex-wrap items-center gap-2 text-base">
             <Bot className="size-4 text-primary" />
             {t("answerTitle")}
+            <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+              {ANSWER_STYLES[model].label}
+            </span>
           </CardTitle>
-          <p className="mt-1 text-xs text-muted-foreground">{t("answerSubtitle")}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{ANSWER_STYLES[model].blurb}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button
