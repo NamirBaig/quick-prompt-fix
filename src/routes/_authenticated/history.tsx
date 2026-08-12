@@ -12,7 +12,7 @@ import { deleteAnalysis, fetchHistory } from "@/lib/history";
 import { SCORE_CLASS, scoreTone, type TargetModel } from "@/lib/prompt-analysis";
 import { setPendingPrompt } from "@/lib/prompt-inbox";
 
-export const Route = createFileRoute("/history")({
+export const Route = createFileRoute("/_authenticated/history")({
   head: () => ({
     meta: [
       { title: "History — Prompt Doctor AI" },

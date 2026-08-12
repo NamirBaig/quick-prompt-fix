@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { TEMPLATE_CATEGORIES, TEMPLATES } from "@/lib/templates";
 import { setPendingPrompt } from "@/lib/prompt-inbox";
 
-export const Route = createFileRoute("/templates")({
+export const Route = createFileRoute("/_authenticated/templates")({
   head: () => ({
     meta: [
       { title: "Prompt Templates — Prompt Doctor AI" },

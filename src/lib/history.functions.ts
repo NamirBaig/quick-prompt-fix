@@ -1,9 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-const sessionSchema = z.object({ sessionId: z.string().min(8).max(64) });
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const insertSchema = sessionSchema.extend({
+const insertSchema = z.object({
   prompt: z.string().min(1).max(20000),
   optimized_prompt: z.string().min(1).max(40000),
   score: z.number().int().min(0).max(100),
@@ -12,16 +12,15 @@ const insertSchema = sessionSchema.extend({
   weaknesses: z.array(z.string().max(200)).max(50),
 });
 
-const deleteSchema = sessionSchema.extend({ id: z.string().uuid() });
+const deleteSchema = z.object({ id: z.string().uuid() });
 
 export const listAnalyses = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => sessionSchema.parse(input))
-  .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: rows, error } = await supabaseAdmin
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: rows, error } = await context.supabase
       .from("prompt_analyses")
       .select("id, prompt, optimized_prompt, score, complexity, model, weaknesses, created_at")
-      .eq("session_id", data.sessionId)
+      .eq("user_id", context.userId)
       .order("created_at", { ascending: false })
       .limit(200);
     if (error) throw new Error("Could not load history");
@@ -29,11 +28,12 @@ export const listAnalyses = createServerFn({ method: "GET" })
   });
 
 export const createAnalysis = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => insertSchema.parse(input))
-  .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("prompt_analyses").insert({
-      session_id: data.sessionId,
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("prompt_analyses").insert({
+      user_id: context.userId,
+      session_id: context.userId,
       prompt: data.prompt,
       optimized_prompt: data.optimized_prompt,
       score: data.score,
@@ -46,14 +46,14 @@ export const createAnalysis = createServerFn({ method: "POST" })
   });
 
 export const removeAnalysis = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => deleteSchema.parse(input))
-  .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
       .from("prompt_analyses")
       .delete()
       .eq("id", data.id)
-      .eq("session_id", data.sessionId);
+      .eq("user_id", context.userId);
     if (error) throw new Error("Could not delete analysis");
     return { ok: true };
   });
