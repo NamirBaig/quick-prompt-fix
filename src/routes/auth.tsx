@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 
-type Search = { redirect?: string };
+type Search = { redirect?: string | undefined };
 
 function safePath(value: unknown): string {
   return typeof value === "string" && value.startsWith("/") && !value.startsWith("//")
@@ -20,8 +20,9 @@ function safePath(value: unknown): string {
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>): Search => ({
-    redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+    redirect: typeof search["redirect"] === "string" ? (search["redirect"] as string) : undefined,
   }),
+
   head: () => ({
     meta: [
       { title: "Sign in or create an account — Prompt Doctor AI" },
