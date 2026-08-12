@@ -123,6 +123,25 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function AppShell() {
   const { t } = useI18n();
+  const pathname = useRouterState({ select: (r) => r.location.pathname });
+
+  if (pathname.startsWith("/auth")) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="glass-bar sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border/60 px-4">
+          <span className="font-display text-sm font-semibold">{t("appName")}</span>
+          <div className="ms-auto flex items-center gap-1.5">
+            <LanguageSelect />
+            <ThemeToggle />
+          </div>
+        </header>
+        <main className="px-4 py-6 sm:px-6">
+          <Outlet />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
@@ -149,6 +168,7 @@ function AppShell() {
     </SidebarProvider>
   );
 }
+
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
