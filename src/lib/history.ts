@@ -1,20 +1,6 @@
 import type { AnalysisResult, TargetModel } from "./prompt-analysis";
 import { createAnalysis, listAnalyses, removeAnalysis } from "./history.functions";
 
-const KEY = "prompt-doctor-session";
-
-export function getSessionId(): string {
-  if (typeof window === "undefined") return "server-session-id";
-  let id = window.localStorage.getItem(KEY);
-  if (!id) {
-    id = (window.crypto?.randomUUID?.() ?? `s-${Date.now()}-${Math.random().toString(36).slice(2)}`)
-      .replace(/-/g, "")
-      .slice(0, 32);
-    window.localStorage.setItem(KEY, id);
-  }
-  return id;
-}
-
 export type AnalysisRecord = {
   id: string;
   prompt: string;
@@ -33,7 +19,6 @@ export async function saveAnalysis(
 ): Promise<void> {
   await createAnalysis({
     data: {
-      sessionId: getSessionId(),
       prompt,
       optimized_prompt: result.optimized,
       score: result.score,
@@ -45,7 +30,7 @@ export async function saveAnalysis(
 }
 
 export async function fetchHistory(): Promise<AnalysisRecord[]> {
-  const rows = await listAnalyses({ data: { sessionId: getSessionId() } });
+  const rows = await listAnalyses();
   return (rows ?? []).map((row) => ({
     ...row,
     weaknesses: Array.isArray(row.weaknesses) ? (row.weaknesses as string[]) : [],
@@ -53,5 +38,5 @@ export async function fetchHistory(): Promise<AnalysisRecord[]> {
 }
 
 export async function deleteAnalysis(id: string): Promise<void> {
-  await removeAnalysis({ data: { sessionId: getSessionId(), id } });
+  await removeAnalysis({ data: { id } });
 }
