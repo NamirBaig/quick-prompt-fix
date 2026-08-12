@@ -19,7 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchHistory } from "@/lib/history";
 import { SCORE_CLASS, scoreTone } from "@/lib/prompt-analysis";
 
-export const Route = createFileRoute("/dashboard")({
+export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
       { title: "Dashboard — Prompt Doctor AI" },

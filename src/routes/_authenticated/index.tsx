@@ -45,7 +45,7 @@ import { downloadReport } from "@/lib/pdf-report";
 import { takePendingPrompt } from "@/lib/prompt-inbox";
 import { useI18n, type Dict } from "@/lib/i18n";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "Prompt Doctor AI — Fix & Optimize AI Prompts" },
